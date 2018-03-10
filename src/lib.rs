@@ -30,21 +30,20 @@ impl Config {
     }
 }
 
-pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    contents
-        .lines()
-        .filter(|c| c.contains(query))
-        .collect()
-}
 
-pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+pub fn search<'a>(query: &str, contents: &'a str, case_sensitive: bool) -> Vec<&'a str> {
 
-    let query: String = query.to_lowercase();
+    let search_fn: Box<Fn(&str) -> bool> = if case_sensitive {
+        Box::new(|c: &str| c.contains(query))
+    } else {
+        Box::new(|c: &str| c.to_lowercase().contains(&query.to_lowercase()))
+    };
 
     contents
         .lines()
-        .filter(|c| c.to_lowercase().contains(&query))
+        .filter(|c| search_fn(c))
         .collect()
+
 }
 
 pub fn run(config: Config) -> Result<(), Box<Error>> {
@@ -53,11 +52,7 @@ pub fn run(config: Config) -> Result<(), Box<Error>> {
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
 
-    let results = if config.case_sensitive {
-        search(&config.query, &contents)
-    } else {
-        search_case_insensitive(&config.query, &contents)
-    };
+    let results = search(&config.query, &contents, config.case_sensitive);
 
     for line in results {
         println!("{}", line);
@@ -81,7 +76,7 @@ Duct tape.";
 
         assert_eq!(
             vec!["safe, fast, productive."],
-            search(query, contents)
+            search(query, contents, true)
         );
     }
 
@@ -96,7 +91,7 @@ Trust me.";
 
         assert_eq!(
             vec!["Rust:", "Trust me."],
-            search_case_insensitive(query, contents)
+            search(query, contents, false)
         );
     }
 }
