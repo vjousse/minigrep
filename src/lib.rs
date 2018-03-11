@@ -11,7 +11,6 @@ pub struct Config {
 
 impl Config {
     pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
-
         args.next();
 
         let query = match args.next() {
@@ -26,24 +25,22 @@ impl Config {
 
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
-        Ok(Config { query, filename, case_sensitive })
+        Ok(Config {
+            query,
+            filename,
+            case_sensitive,
+        })
     }
 }
 
-
 pub fn search<'a>(query: &str, contents: &'a str, case_sensitive: bool) -> Vec<&'a str> {
-
     let search_fn: Box<Fn(&str) -> bool> = if case_sensitive {
         Box::new(|c: &str| c.contains(query))
     } else {
         Box::new(|c: &str| c.to_lowercase().contains(&query.to_lowercase()))
     };
 
-    contents
-        .lines()
-        .filter(|c| search_fn(c))
-        .collect()
-
+    contents.lines().filter(|c| search_fn(c)).collect()
 }
 
 pub fn run(config: Config) -> Result<(), Box<Error>> {
@@ -89,9 +86,6 @@ safe, fast, productive.
 Pick three.
 Trust me.";
 
-        assert_eq!(
-            vec!["Rust:", "Trust me."],
-            search(query, contents, false)
-        );
+        assert_eq!(vec!["Rust:", "Trust me."], search(query, contents, false));
     }
 }
